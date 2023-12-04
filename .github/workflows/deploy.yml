@@ -1,57 +1,68 @@
-# name:  Deploy to EC2
-#   env:
-#     SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-#     SSH_USER: ubuntu
-#     EC2_IP: 51.20.103.28
-#     APP_FOLDER: ./be_server
-#     DESTINATION_PATH: /home/ubuntu/be_server
-#   run: |
-#     scp -i "${SSH_PRIVATE_KEY}" -r "${APP_FOLDER}" "${SSH_USER}@${EC2_IP}:${DESTINATION_PATH}"
-#     ssh -i "${SSH_PRIVATE_KEY}" "${SSH_USER}@${EC2_IP}" 'bash -s' < deploy.sh
 
-name:  Node Backend server pipeline
+# name:  Node Backend server pipeline
+
+# on:
+#   push:
+#     branches: [development]
+#   pull_request:
+#     branches: [development]
+#     types: merged
+
+# jobs:
+#   build:
+#     runs-on: ubuntu-latest
+#     steps:
+#     - uses: actions/checkout@v2
+#     - name: Install Node.js
+#       uses: actions/setup-node@v1
+#       with:
+#         node-version: '14.21.3'
+#     - name: Install npm dependencies
+#       run: npm install
+#     - name: Run build task
+#       run: npm run build --if-present
+
+#   deploy:
+#     needs: [build]
+#     runs-on: ubuntu-latest
+
+#     steps: 
+#       - name: SSH deploy
+#         uses: appleboy/ssh-action@master
+#         with: 
+#             host: ${{ secrets.DEV_HOST}}
+#             username: ${{ secrets.USER}}
+#             key: ${{ secrets.DEV_KEY}}
+#             port: ${{ secrets.PORT}}
+
+#             script: |
+#                 git config --global --add safe.directory /home/be_server
+#                 cd ~/be_server
+#                 git reset --hard
+#                 git pull origin development
+#                 export NVM_DIR="$HOME/.nvm"
+#                 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+#                 npm install
+#                 npm run start
+#                 pm2 restart index.js
+
+
+
+name: Deploy to EC2
 
 on:
   push:
-    branches: [development]
-  pull_request:
-    branches: [development]
-    types: merged
+    branches:
+      - development
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - name: Install Node.js
-      uses: actions/setup-node@v1
-      with:
-        node-version: '14.21.3'
-    - name: Install npm dependencies
-      run: npm install
-    - name: Run build task
-      run: npm run build --if-present
-
   deploy:
-    needs: [build]
     runs-on: ubuntu-latest
 
-    steps: 
-      - name: SSH deploy
-        uses: appleboy/ssh-action@master
-        with: 
-            host: ${{ secrets.DEV_HOST}}
-            username: ${{ secrets.USER}}
-            key: ${{ secrets.DEV_KEY}}
-            port: ${{ secrets.PORT}}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-            script: |
-                git config --global --add safe.directory /home/be_server
-                cd ~/be_server
-                git reset --hard
-                git pull origin development
-                export NVM_DIR="$HOME/.nvm"
-                [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-                npm install
-                npm run start
-                pm2 restart index.js
+    - name: Deploy to EC2
+      run: |
+        ssh -o StrictHostKeyChecking=no -i ${{ secrets.SSH_PRIVATE_KEY }} ubutnu@ec2-51-20-98-141.eu-north-1.compute.amazonaws.com "cd /home/ubuntu/be_server && git pull"

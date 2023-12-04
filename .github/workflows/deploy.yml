@@ -1,10 +1,58 @@
-name:  Deploy to EC2
-  env:
-    SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-    SSH_USER: ubuntu
-    EC2_IP: 51.20.103.28
-    APP_FOLDER: ./be_server
-    DESTINATION_PATH: /home/ubuntu/be_server
-  run: |
-    scp -i "${SSH_PRIVATE_KEY}" -r "${APP_FOLDER}" "${SSH_USER}@${EC2_IP}:${DESTINATION_PATH}"
-    ssh -i "${SSH_PRIVATE_KEY}" "${SSH_USER}@${EC2_IP}" 'bash -s' < deploy.sh
+# name:  Deploy to EC2
+#   env:
+#     SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+#     SSH_USER: ubuntu
+#     EC2_IP: 51.20.103.28
+#     APP_FOLDER: ./be_server
+#     DESTINATION_PATH: /home/ubuntu/be_server
+#   run: |
+#     scp -i "${SSH_PRIVATE_KEY}" -r "${APP_FOLDER}" "${SSH_USER}@${EC2_IP}:${DESTINATION_PATH}"
+#     ssh -i "${SSH_PRIVATE_KEY}" "${SSH_USER}@${EC2_IP}" 'bash -s' < deploy.sh
+
+name:  Node Backend server pipeline
+
+on:
+  push:
+    branches: [development]
+  pull_request:
+    branches: [development]
+    types: merged
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install Node.js
+      uses: actions/setup-node@v1
+      with:
+        node-version: '17.3.0'
+    - name: Install npm dependencies
+      run: npm install
+    - name: Run build task
+      run: npm run build --if-present
+
+  deploy:
+    needs: [build]
+    runs-on: ubuntu-latest
+
+    steps: 
+      - name: SSH deploy
+        uses: appleboy/ssh-action@master
+        with: 
+            host: ${{ secrets.DEV_HOST}}
+            username: ${{ secrets.USER}}
+            key: ${{ secrets.DEV_KEY}}
+            port: ${{ secrets.PORT}}
+
+            script: |
+                git config --global --add safe.directory /home/***/QauseRestServices
+                cd ~/QauseRestServices
+                git reset --hard
+                git pull origin development
+                export NVM_DIR="$HOME/.nvm"
+                [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+                nvm install 17.3.0
+                npm install
+                npm run start
+                pm2 restart server.js

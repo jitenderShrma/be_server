@@ -43,7 +43,7 @@ jobs:
             host: ${{ secrets.DEV_HOST}}
             username: ${{ secrets.USER}}
             key: ${{ secrets.DEV_KEY}}
-            # port: ${{ secrets.PORT}}
+            port: ${{ secrets.PORT}}
 
             script: |
                 git config --global --add safe.directory /home/***/QauseRestServices

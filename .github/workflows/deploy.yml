@@ -46,12 +46,12 @@ jobs:
             port: ${{ secrets.PORT}}
 
             script: |
-                git config --global --add safe.directory /home/***/QauseRestServices
-                cd ~/QauseRestServices
+                git config --global --add safe.directory /home/be_server
+                cd ~/be_server
                 git reset --hard
                 git pull origin development
                 export NVM_DIR="$HOME/.nvm"
                 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
                 npm install
                 npm run start
-                pm2 restart server.js
+                pm2 restart index.js

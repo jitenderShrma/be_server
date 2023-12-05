@@ -63,6 +63,6 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Deploy to EC2 
+    - name: Deploy to EC2  
       run: |
         ssh -o StrictHostKeyChecking=no -i ${{ secrets.SSH_PRIVATE_KEY }} ubuntu@ec2-51-20-98-141.eu-north-1.compute.amazonaws.com "cd /home/ubuntu/be_server && git pull"
